@@ -302,3 +302,14 @@ def get_granularity(
         results[f"Granularity_{granularity_id}"] = gss
 
     return results
+
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+
+    gran = get_granularity(
+        mask=plt.imread(
+            "../../../data/source_13__20220914_Run1__CP-CC9-R1-01__I13__5/SLFN13_01_AGP__source_13__20220914_Run1__CP-CC9-R1-01__I13__5.tif"),
+        pixels=plt.imread("../../../data/source_13__20220914_Run1__CP-CC9-R1-01__I13__5/cytosol_mask.tif")
+    )
+    assert gran is not None
