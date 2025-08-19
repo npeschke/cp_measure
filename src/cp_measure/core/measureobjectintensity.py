@@ -394,3 +394,13 @@ def get_intensity(masks: numpy.ndarray, pixels: numpy.ndarray):
         result[measurement_name] = measurement
 
     return result
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+
+    res = get_intensity(
+        masks=plt.imread(
+            "../../../data/source_13__20220914_Run1__CP-CC9-R1-01__I13__5/SLFN13_01_AGP__source_13__20220914_Run1__CP-CC9-R1-01__I13__5.tif"),
+        pixels=plt.imread("../../../data/source_13__20220914_Run1__CP-CC9-R1-01__I13__5/cytosol_mask.tif")
+    )
+    assert res is not None
