@@ -53,7 +53,8 @@ References
 
 import numpy
 import scipy.ndimage
-import skimage.morphology
+# import skimage.morphology as morphology
+import cucim.skimage.morphology as morphology
 from centrosome.cpmorphology import fixup_scipy_ndimage_result as fix
 
 
@@ -184,15 +185,15 @@ def get_granularity(
         back_shape = new_shape
     radius = element_size
     if pixels.ndim == 2:
-        footprint = skimage.morphology.disk(radius, dtype=bool)
+        footprint = morphology.disk(radius, dtype=bool)
     else:
-        footprint = skimage.morphology.ball(radius, dtype=bool)
+        footprint = morphology.ball(radius, dtype=bool)
     back_pixels_mask = numpy.zeros_like(back_pixels)
     back_pixels_mask[back_mask == 1] = back_pixels[back_mask == 1]
-    back_pixels = skimage.morphology.erosion(back_pixels_mask, footprint=footprint)
+    back_pixels = morphology.erosion(back_pixels_mask, footprint=footprint)
     back_pixels_mask = numpy.zeros_like(back_pixels)
     back_pixels_mask[back_mask == 1] = back_pixels[back_mask == 1]
-    back_pixels = skimage.morphology.dilation(back_pixels_mask, footprint=footprint)
+    back_pixels = morphology.dilation(back_pixels_mask, footprint=footprint)
     if image_sample_size < 1:
         if pixels.ndim == 2:
             i, j = numpy.mgrid[0 : new_shape[0], 0 : new_shape[1]].astype(float)
@@ -236,9 +237,9 @@ def get_granularity(
     startmean = max(startmean, numpy.finfo(float).eps)
 
     if pixels.ndim == 2:
-        footprint = skimage.morphology.disk(1, dtype=bool)
+        footprint = morphology.disk(1, dtype=bool)
     else:
-        footprint = skimage.morphology.ball(1, dtype=bool)
+        footprint = morphology.ball(1, dtype=bool)
 
     unique_labels = numpy.unique(mask)
     unique_labels = unique_labels[unique_labels > 0]
@@ -257,9 +258,9 @@ def get_granularity(
         # ero_mask[mask == True] = ero[mask == True]
         ero_mask = ero.copy()
         # Shrink bright regions
-        ero = skimage.morphology.erosion(ero_mask, footprint=footprint)
+        ero = morphology.erosion(ero_mask, footprint=footprint)
         # Use a mask (footprint) to make bright sections bigger
-        rec = skimage.morphology.reconstruction(ero, pixels, footprint=footprint)
+        rec = morphology.reconstruction(ero, pixels, footprint=footprint)
         # currentmean = numpy.mean(rec[mask])
         # gs is the image granularity
         # gs = (prevmean - currentmean) * 100 / startmean
