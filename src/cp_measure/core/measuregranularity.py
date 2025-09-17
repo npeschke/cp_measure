@@ -50,6 +50,7 @@ References
    processing”, *Applied Informatics*, v.14, pp. 41-90, Finances and
    Statistics, Moskow, (in Russian)
 """
+import time
 
 import numpy
 import scipy.ndimage
@@ -311,9 +312,13 @@ def get_granularity(
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
+    start = time.perf_counter()
     gran = get_granularity(
         mask=plt.imread(
             "../../../data/source_13__20220914_Run1__CP-CC9-R1-01__I13__5/SLFN13_01_AGP__source_13__20220914_Run1__CP-CC9-R1-01__I13__5.tif"),
         pixels=plt.imread("../../../data/source_13__20220914_Run1__CP-CC9-R1-01__I13__5/cytosol_mask.tif")
     )
+    end = time.perf_counter()
+
+    print(f"Runtime: {end - start} s")
     assert gran is not None
