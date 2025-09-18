@@ -54,9 +54,15 @@ import time
 
 import numpy
 import scipy.ndimage
-# import skimage.morphology as morphology
-import cucim.skimage.morphology as morphology
-import cupy
+
+import os
+USE_CUCIM = "USE_CUCIM" in os.environ
+
+if USE_CUCIM:
+    import cucim.skimage.morphology as morphology
+    import cupy
+else:
+    import skimage.morphology as morphology
 from centrosome.cpmorphology import fixup_scipy_ndimage_result as fix
 
 
@@ -190,10 +196,14 @@ def get_granularity(
         footprint = morphology.disk(radius, dtype=bool)
     else:
         footprint = morphology.ball(radius, dtype=bool)
-    back_pixels_mask = cupy.zeros_like(back_pixels)
+    if USE_CUCIM:
+        back_pixels_mask = cupy.zeros_like(back_pixels)
+    else:
+        back_pixels_mask = numpy.zeros_like(back_pixels)
     back_pixels_mask[back_mask == 1] = back_pixels[back_mask == 1]
     back_pixels = morphology.erosion(back_pixels_mask, footprint=footprint)
-    back_pixels_mask = cupy.zeros_like(back_pixels)
+    if USE_CUCIM:
+        back_pixels_mask = cupy.zeros_like(back_pixels)
     back_pixels_mask[back_mask == 1] = back_pixels[back_mask == 1]
     back_pixels = morphology.dilation(back_pixels_mask, footprint=footprint)
     if image_sample_size < 1:
@@ -205,7 +215,10 @@ def get_granularity(
             #
             i *= float(back_shape[0] - 1) / float(new_shape[0] - 1)
             j *= float(back_shape[1] - 1) / float(new_shape[1] - 1)
-            back_pixels = scipy.ndimage.map_coordinates(back_pixels.get(), (i, j), order=1)
+            if USE_CUCIM:
+                back_pixels = scipy.ndimage.map_coordinates(back_pixels.get(), (i, j), order=1)
+            else:
+                back_pixels = scipy.ndimage.map_coordinates(back_pixels, (i, j), order=1)
         else:
             k, i, j = numpy.mgrid[
                 0 : new_shape[0], 0 : new_shape[1], 0 : new_shape[2]
@@ -213,7 +226,10 @@ def get_granularity(
             k *= float(back_shape[0] - 1) / float(new_shape[0] - 1)
             i *= float(back_shape[1] - 1) / float(new_shape[1] - 1)
             j *= float(back_shape[2] - 1) / float(new_shape[2] - 1)
-            back_pixels = scipy.ndimage.map_coordinates(back_pixels.get(), (k, i, j), order=1)
+            if USE_CUCIM:
+                back_pixels = scipy.ndimage.map_coordinates(back_pixels.get(), (k, i, j), order=1)
+            else:
+                back_pixels = scipy.ndimage.map_coordinates(back_pixels, (k, i, j), order=1)
     pixels -= back_pixels
     pixels[pixels < 0] = 0
 
@@ -252,15 +268,19 @@ def get_granularity(
     current_mean = fix(scipy.ndimage.mean(pixels, labels, range_))
     start_mean = numpy.maximum(current_mean, numpy.finfo(float).eps)
 
-    pixels = cupy.array(pixels)
+    if USE_CUCIM:
+        pixels = cupy.array(pixels)
     results = {}
     for granularity_id in range(1, ng + 1):
         # NOTE: This seems to be an iterative process of sequential
         # erosions and reconstructions
         # ero_mask = numpy.zeros_like(ero)
         # ero_mask[mask == True] = ero[mask == True]
-        ero_mask = ero.copy()
-        ero_mask = cupy.array(ero_mask)
+
+        if USE_CUCIM:
+            ero_mask = cupy.array(ero, copy=True)
+        else:
+            ero_mask = ero.copy()
         # Shrink bright regions
         ero = morphology.erosion(ero_mask, footprint=footprint)
         # Use a mask (footprint) to make bright sections bigger
@@ -283,7 +303,10 @@ def get_granularity(
             #
             i *= float(new_shape[0] - 1) / float(orig_shape[0] - 1)
             j *= float(new_shape[1] - 1) / float(orig_shape[1] - 1)
-            rec = scipy.ndimage.map_coordinates(rec.get(), (i, j), order=1)
+            if USE_CUCIM:
+                rec = scipy.ndimage.map_coordinates(rec.get(), (i, j), order=1)
+            else:
+                rec = scipy.ndimage.map_coordinates(rec, (i, j), order=1)
         else:
             k, i, j = numpy.mgrid[
                 0 : orig_shape[0], 0 : orig_shape[1], 0 : orig_shape[2]
@@ -291,7 +314,10 @@ def get_granularity(
             k *= float(new_shape[0] - 1) / float(orig_shape[0] - 1)
             i *= float(new_shape[1] - 1) / float(orig_shape[1] - 1)
             j *= float(new_shape[2] - 1) / float(orig_shape[2] - 1)
-            rec = scipy.ndimage.map_coordinates(rec.get(), (k, i, j), order=1)
+            if USE_CUCIM:
+                rec = scipy.ndimage.map_coordinates(rec.get(), (k, i, j), order=1)
+            else:
+                rec = scipy.ndimage.map_coordinates(rec, (k, i, j), order=1)
 
         # Calculate the means for the objects
         gss = numpy.zeros((0,))
